@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Agentic Video Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="top-left">
+      <span class="brand">🎬 <b>Agentic Video Editor</b></span>
+      <button id="btn-projects" title="Projecten openen en maken">📁 <span id="topbar-project">…</span></button>
+    </div>
+    <div class="top-actions">
+      <span id="conn-dot" title="Verbinding met server">●</span>
+      <button id="btn-undo" title="Ongedaan maken (⌘Z)">↩︎</button>
+      <button id="btn-redo" title="Opnieuw (⇧⌘Z)">↪︎</button>
+      <button id="btn-versions" title="Versies: bewaren, vergelijken en terugzetten">🕘</button>
+      <button id="btn-settings" title="Instellingen">⚙︎</button>
+      <button id="btn-export" class="accent">Exporteer</button>
+    </div>
+  </header>
+
+  <main id="monitors">
+    <section class="monitor" id="source-monitor">
+      <div class="monitor-head">Bron <span id="source-name" class="dim"></span></div>
+      <div class="monitor-view" id="source-view">
+        <video id="source-video" playsinline></video>
+        <img id="source-image" alt="" hidden>
+        <div class="monitor-empty" id="source-empty">Kies media in de bin</div>
+      </div>
+      <div class="monitor-bar">
+        <div class="scrubber" id="source-scrubber">
+          <div class="scrub-inout" id="source-inout"></div>
+          <div class="scrub-head" id="source-scrubhead"></div>
+        </div>
+      </div>
+      <div class="monitor-controls">
+        <span class="tc" id="source-tc">00:00:00:00</span>
+        <button id="src-play" title="Afspelen (spatie)">▶</button>
+        <button id="src-in" title="Markeer In (I)">⟦ In</button>
+        <button id="src-out" title="Markeer Uit (O)">Uit ⟧</button>
+        <button id="src-insert" class="accent" title="Plaats op playhead (,)">↓ Plaats</button>
+      </div>
+    </section>
+
+    <section class="monitor" id="program-monitor">
+      <div class="monitor-head">Programma <span class="dim" id="program-res"></span></div>
+      <div class="monitor-view" id="program-view">
+        <div class="monitor-empty" id="program-empty">Timeline is leeg</div>
+        <canvas id="vu-meter" width="26" height="240" title="Master-niveau (L/R, piek-hold; rood = clipping)"></canvas>
+      </div>
+      <div class="monitor-bar">
+        <div class="scrubber" id="program-scrubber">
+          <div class="scrub-head" id="program-scrubhead"></div>
+        </div>
+      </div>
+      <div class="monitor-controls">
+        <span class="tc" id="program-tc">00:00:00:00</span>
+        <button id="prog-tostart" title="Naar begin (Home)">⏮</button>
+        <button id="prog-play" title="Afspelen (spatie)">▶</button>
+        <button id="prog-note" title="Opmerking plaatsen op deze positie (N)">💬</button>
+        <span class="tc dim" id="program-dur"></span>
+      </div>
+    </section>
+  </main>
+
+  <section id="bottom">
+    <aside id="left-panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="bin">Media</button>
+        <button class="tab" data-tab="notes">Opmerkingen <span id="note-badge" class="badge" hidden>0</span></button>
+      </div>
+      <div class="tab-page" id="tab-bin">
+        <div class="bin-actions">
+          <button id="btn-import">+ Importeer</button>
+          <button id="btn-title" title="Titel/tekstclip maken">+ Titel</button>
+          <input type="file" id="file-input" multiple accept="video/*,audio/*,image/*" hidden>
+        </div>
+        <div id="bin-list"></div>
+      </div>
+      <div class="tab-page" id="tab-notes" hidden>
+        <div class="note-new">
+          <div class="note-head"><b>Opmerking op</b> <span class="tc" id="note-time">00:00:00:00</span></div>
+          <textarea id="note-text" rows="3" placeholder="Wat moet hier anders? (⏎ om te plaatsen)"></textarea>
+          <button id="note-add" class="accent">+ Plaats opmerking</button>
+        </div>
+        <label class="small dim" style="display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="note-filter" style="width:auto" checked> alleen openstaande tonen
+        </label>
+        <div class="small dim" id="note-count"></div>
+        <div id="note-list"></div>
+      </div>
+    </aside>
+
+    <section id="timeline-panel">
+      <div id="tl-toolbar">
+        <button id="tool-select" class="tool active" title="Selecteren (V)">▢</button>
+        <button id="tool-razor" class="tool" title="Razor / knippen (C)">✂︎</button>
+        <button id="btn-split" title="Knip alles op playhead (⌘K)">┆ Knip</button>
+        <button id="btn-delete" title="Verwijder selectie (⌫)">🗑</button>
+        <button id="btn-ripple" title="Ripple delete (⇧⌫): verwijderen + gat dichten">🗑⇤</button>
+        <span class="sep"></span>
+        <button id="btn-addvtrack" title="Videotrack toevoegen">+V</button>
+        <button id="btn-addatrack" title="Audiotrack toevoegen">+A</button>
+        <span class="sep"></span>
+        <button id="btn-wa-in" title="Werkgebied-begin op playhead">⟦W</button>
+        <button id="btn-wa-out" title="Werkgebied-einde op playhead">W⟧</button>
+        <button id="btn-wa-clear" title="Werkgebied wissen">✕W</button>
+        <span class="sep"></span>
+        <span class="trans-chip" draggable="true" data-type="crossfade" title="Crossfade — sleep naar een cut tussen twee clips">⤬ fade</span>
+        <span class="trans-chip" draggable="true" data-type="wipe" title="Wipe (links→rechts) — sleep naar een cut">◧ wipe</span>
+        <span class="trans-chip" draggable="true" data-type="dip" title="Dip to black — sleep naar een cut">⬛ dip</span>
+        <span class="flex1"></span>
+        <span class="tc" id="tl-tc">00:00:00:00</span>
+        <button id="zoom-fit" title="Hele montage in beeld (⇧Z)">⇤⇥</button>
+        <button id="zoom-out" title="Uitzoomen (-)">−</button>
+        <input type="range" id="zoom-slider" min="0.5" max="400" step="0.5" value="60">
+        <button id="zoom-in" title="Inzoomen (+)">＋</button>
+      </div>
+      <div id="tl-body">
+        <div id="tl-headers"></div>
+        <div id="tl-scroll">
+          <canvas id="tl-ruler"></canvas>
+          <div id="tl-tracks"></div>
+          <div id="tl-playhead"><div class="ph-cap"></div></div>
+        </div>
+      </div>
+    </section>
+  </section>
+</div>
+
+<dialog id="dlg-projects">
+  <h3>Projecten <span class="dim small" id="proj-current"></span></h3>
+  <div id="proj-list" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin:8px 0"></div>
+  <div class="row2">
+    <div><label>Naam</label><input type="text" id="proj-name" placeholder="nieuwe-projectnaam"></div>
+  </div>
+  <div class="dlg-actions">
+    <button id="proj-close">Sluit</button>
+    <button id="proj-props" title="Titel, klant, soort, beeldformaat en statistieken van het actieve project">Eigenschappen…</button>
+    <button id="proj-saveas" title="Huidige montage onder deze naam opslaan">Opslaan als</button>
+    <button id="proj-new" class="accent" title="Leeg project met deze naam">Nieuw project</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-props-project">
+  <h3>Projecteigenschappen <span class="dim small" id="pp-file"></span></h3>
+  <div class="row2">
+    <div style="flex:2"><label>Bestandsnaam <span class="dim small">(hernoemen neemt versies en exports mee)</span></label><input type="text" id="pp-name"></div>
+    <div><label>Soort</label>
+      <select id="pp-kind">
+        <option value="video">Video</option>
+        <option value="podcast">Podcast (alleen audio)</option>
+      </select>
+    </div>
+  </div>
+  <div class="row2">
+    <div style="flex:2"><label>Titel</label><input type="text" id="pp-title" placeholder="zoals de productie heet"></div>
+    <div><label>Klant / opdrachtgever</label><input type="text" id="pp-client" placeholder="optioneel"></div>
+  </div>
+  <label>Omschrijving / notities</label>
+  <textarea id="pp-desc" rows="3" style="width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:6px;font:inherit" placeholder="waar gaat het over, afspraken, deadline…"></textarea>
+  <div class="row2">
+    <div><label>Beeldformaat</label>
+      <select id="pp-preset">
+        <option value="1920x1080">1080p · 16:9 (1920×1080)</option>
+        <option value="3840x2160">4K UHD · 16:9 (3840×2160)</option>
+        <option value="1280x720">720p · 16:9 (1280×720)</option>
+        <option value="1080x1920">Verticaal · 9:16 (1080×1920)</option>
+        <option value="1080x1080">Vierkant · 1:1 (1080×1080)</option>
+        <option value="custom">Aangepast…</option>
+      </select>
+    </div>
+    <div><label>Breedte</label><input type="number" id="pp-w" min="16"></div>
+    <div><label>Hoogte</label><input type="number" id="pp-h" min="16"></div>
+    <div><label>FPS</label>
+      <select id="pp-fps">
+        <option value="23.976">23.976</option><option value="24">24</option><option value="25">25</option>
+        <option value="29.97">29.97</option><option value="30">30</option><option value="50">50</option><option value="60">60</option>
+      </select>
+    </div>
+    <div><label>Samplerate</label>
+      <select id="pp-sr"><option value="44100">44.1 kHz</option><option value="48000">48 kHz</option><option value="96000">96 kHz</option></select>
+    </div>
+  </div>
+  <div id="pp-stats" class="pp-stats"></div>
+  <div class="dlg-actions">
+    <button id="pp-cancel">Annuleer</button>
+    <button id="pp-save" class="accent">Opslaan</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-settings">
+  <h3>Instellingen</h3>
+  <label>Taal van de interface</label>
+  <select id="set-lang">
+    <option value="nl">Nederlands</option>
+    <option value="en">English</option>
+    <option value="de">Deutsch</option>
+  </select>
+  <div class="row2">
+    <div><label>Breedte</label><input type="number" id="set-w"></div>
+    <div><label>Hoogte</label><input type="number" id="set-h"></div>
+    <div><label>FPS</label><input type="number" id="set-fps"></div>
+  </div>
+  <div class="dlg-actions">
+    <button id="set-cancel">Annuleer</button>
+    <button id="set-save" class="accent">Opslaan</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-props">
+  <h3>Clip-eigenschappen <span class="dim small" id="prop-name"></span></h3>
+  <div class="row2">
+    <div><label>Snelheid (0.25–4)</label><input type="number" id="prop-speed" step="0.05" min="0.25" max="4"></div>
+    <div><label>Opacity (0–1)</label><input type="number" id="prop-opacity" step="0.05" min="0" max="1"></div>
+  </div>
+  <div class="row2">
+    <div><label>Schaal (0.05–3)</label><input type="number" id="prop-scale" step="0.05" min="0.05" max="3"></div>
+    <div><label>X (−1…1)</label><input type="number" id="prop-x" step="0.05" min="-1" max="1"></div>
+    <div><label>Y (−1…1)</label><input type="number" id="prop-y" step="0.05" min="-1" max="1"></div>
+  </div>
+  <div class="dlg-actions">
+    <button id="prop-reset">Reset</button>
+    <button id="prop-cancel">Annuleer</button>
+    <button id="prop-save" class="accent">Toepassen</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-title">
+  <h3 id="title-dlg-head">Titel maken</h3>
+  <label>Tekst</label>
+  <textarea id="title-text" rows="3" style="width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:6px;font:inherit"></textarea>
+  <div class="row2">
+    <div><label>Positie</label>
+      <select id="title-pos">
+        <option value="onder">Onder (lower third)</option>
+        <option value="midden">Midden</option>
+        <option value="boven">Boven</option>
+      </select>
+    </div>
+    <div><label>Grootte (px @1080p)</label><input type="number" id="title-size" value="64" min="16" max="300"></div>
+    <div><label>Kleur</label><input type="color" id="title-color" value="#ffffff" style="height:32px"></div>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;margin-top:10px"><input type="checkbox" id="title-bg" checked style="width:auto"> Donker balkje achter de tekst</label>
+  <div class="dlg-actions">
+    <button id="title-cancel">Annuleer</button>
+    <button id="title-save" class="accent">Opslaan</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-export">
+  <h3>Exporteren</h3>
+  <label>Bestandsnaam</label>
+  <input type="text" id="exp-name" value="montage">
+  <div class="row2">
+    <div><label>Preset</label>
+      <select id="exp-preset">
+        <option value="mp4">MP4 · H.264 (YouTube/web)</option>
+        <option value="mp4_hq">MP4 · H.264 hoge kwaliteit</option>
+        <option value="prores">MOV · ProRes 422 (verder bewerken)</option>
+        <option value="wav">Alleen audio · WAV</option>
+        <option value="mp3">Alleen audio · MP3</option>
+      </select>
+    </div>
+    <div><label>Bitrate (Mbps, alleen MP4)</label><input type="number" id="exp-bitrate" placeholder="auto" min="1" max="100"></div>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;margin-top:10px"><input type="checkbox" id="exp-workarea" style="width:auto"> Alleen het werkgebied renderen</label>
+  <div class="progress" id="exp-progress" hidden><div class="progress-fill" id="exp-fill"></div></div>
+  <div id="exp-status" class="small dim"></div>
+  <div class="dlg-actions">
+    <button id="exp-close">Sluit</button>
+    <a href="/api/export.xml" download><button title="FCP7-xmeml: importeren via Bestand > Importeren in Premiere Pro">Premiere XML</button></a>
+    <a href="/api/export.sesx" download><button title="Adobe Audition-sessie: alle audiotracks met fades en volumes">Audition SESX</button></a>
+        <button id="exp-start" class="accent">Start render</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-gaps">
+  <h3>Stiltes inkorten</h3>
+  <p class="small dim">Gaten tussen twee woorden op de tijdlijn: adem, denkpauze of dode lucht. Alles boven de drempel wordt teruggebracht tot de rust die je hieronder kiest — over alle tracks, met het gat dicht.</p>
+  <div class="row2">
+    <div><label>Vanaf stilte van (s)</label><input type="number" id="pod-gap-min" value="1.2" min="0.3" max="10" step="0.1"></div>
+    <div><label>Laat staan (s)</label><input type="number" id="pod-gap-keep" value="0.35" min="0.05" max="3" step="0.05"></div>
+  </div>
+  <div class="small" id="pod-gap-total" style="margin:8px 0"></div>
+  <div id="pod-gap-list"></div>
+  <div class="dlg-actions">
+    <button id="pod-gap-close">Annuleer</button>
+    <button id="pod-gap-apply" class="accent">Kort ze in</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-versions">
+  <h3>Versies <span class="dim small" id="ver-project"></span></h3>
+  <div class="ver-new">
+    <input type="text" id="ver-message" placeholder="wat is er veranderd? (bijv. volgorde hoofdstukken aangepast)">
+    <button id="ver-commit" class="accent">Bewaar deze versie</button>
+  </div>
+  <div id="ver-list"></div>
+  <pre id="ver-diff" hidden></pre>
+  <div class="dlg-actions">
+    <button id="ver-close">Sluit</button>
+  </div>
+</dialog>
+
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

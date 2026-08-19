@@ -1,0 +1,7 @@
+node_modules/
+config.json
+media/
+renders/
+projects/
+.DS_Store
+*.log

@@ -1,0 +1,20 @@
+{
+  "name": "agentic-video-editor",
+  "version": "0.1.0",
+  "description": "A timeline video editor whose UI and HTTP API share one live state, so a person and an AI agent can edit the same cut at the same time.",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server/index.js",
+    "app": "electron ."
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "electron": "^43.4.0"
+  }
+}
