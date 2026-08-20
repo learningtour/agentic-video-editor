@@ -198,8 +198,10 @@ curl -s localhost:4720/api/export.sesx   -o project.sesx   # Adobe Audition sess
 
 The XML refers to the original media files. The FCPXML exporter currently carries the primary video
 spine, linked audio gain, connected image overlays and timeline markers. Connected overlays are split
-at spine edit points so Final Cut Pro receives valid child clips. The Audition session carries the
-audio tracks with their names, clip volumes and fades; picture does not travel with it.
+at spine edit points so Final Cut Pro receives valid child clips. Unsupported edits such as retiming,
+transitions, visual transforms, fades, gain envelopes or independent audio return an explicit export
+error instead of silently changing the timeline. The Audition session carries the audio tracks with
+their names, clip volumes and fades; picture does not travel with it.
 
 ## WebSocket
 
