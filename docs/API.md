@@ -191,12 +191,15 @@ opened at startup.
 ## Exchange with other editors
 
 ```bash
-curl -s localhost:4720/api/export.xml  -o project.xml    # Premiere Pro (FCP7 xmeml)
-curl -s localhost:4720/api/export.sesx -o project.sesx   # Adobe Audition session
+curl -s localhost:4720/api/export.fcpxml -o project.fcpxml # Final Cut Pro (FCPXML 1.10)
+curl -s localhost:4720/api/export.xml    -o project.xml    # Premiere Pro (FCP7 xmeml)
+curl -s localhost:4720/api/export.sesx   -o project.sesx   # Adobe Audition session
 ```
 
-The XML refers to the original media files. The Audition session carries the audio tracks with their
-names, clip volumes and fades; picture does not travel with it.
+The XML refers to the original media files. The FCPXML exporter currently carries the primary video
+spine, linked audio gain, connected image overlays and timeline markers. Connected overlays are split
+at spine edit points so Final Cut Pro receives valid child clips. The Audition session carries the
+audio tracks with their names, clip volumes and fades; picture does not travel with it.
 
 ## WebSocket
 
