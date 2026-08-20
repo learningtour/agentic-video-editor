@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "start": "node server/index.js",
-    "app": "electron ."
+    "app": "electron .",
+    "test": "node --test"
   },
   "dependencies": {
     "express": "^5.2.1",

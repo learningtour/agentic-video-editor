@@ -19,7 +19,7 @@ apply an edit, and see the result — while you are working in the same timeline
 - **Markers and review notes** — notes at a timecode, in the spirit of Vimeo Review.
 - **Versions** — full snapshots of the cut with a message, plus a diff to see what changed.
 - **Render** — H.264 / ProRes / WAV / MP3 through ffmpeg, whole timeline or work area.
-- **Exchange** — Premiere Pro XML (FCP7 xmeml) and an Adobe Audition session (.sesx).
+- **Exchange** — modern Final Cut Pro XML (FCPXML 1.10), Premiere Pro XML (FCP7 xmeml) and an Adobe Audition session (.sesx).
 - **Analysis** — scene-change and silence detection, as input for automated edits.
 - **Interface in Dutch, English and German.**
 
@@ -73,6 +73,7 @@ server/
   render.js     export through an ffmpeg filter_complex
   versions.js   snapshots of the cut: save, compare, restore
   analyze.js    scene changes and silences
+  fcpxml.js     modern Final Cut Pro XML (FCPXML 1.10)
   xml.js        Premiere Pro XML (FCP7 xmeml)
   sesx.js       Adobe Audition session
   index.js      Express + WebSocket

@@ -294,6 +294,19 @@ app.get('/api/export.xml', async (req, res) => {
     .send(buildPremiereXml());
 });
 
+// Modern Final Cut Pro XML (FCPXML 1.10)
+app.get('/api/export.fcpxml', async (req, res) => {
+  try {
+    const { buildFcpXml } = await import('./fcpxml.js');
+    const filename = activeProjectName().replace(/[\\/"\r\n]/g, '_');
+    res.type('application/xml')
+      .set('Content-Disposition', `attachment; filename="${filename}.fcpxml"`)
+      .send(buildFcpXml(project, { projectName: activeProjectName() }));
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Adobe Audition-sessie (.sesx) — voor het fijnslijpen van de audio
 app.get('/api/export.sesx', async (req, res) => {
   const { buildSesx } = await import('./sesx.js');
